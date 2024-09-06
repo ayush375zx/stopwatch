@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch</title>
+
+    <!-- Font-face for locally hosted Digital-7 font -->
+    <style>
+        @font-face {
+            font-family: 'Digital-7';
+            src: url('digital-7.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .stopwatch {
+            color: white;
+            font-size: 100px;
+            text-align: center;
+            cursor: pointer;
+            font-family: 'Digital-7', sans-serif; /* Classic calculator font */
+        }
+
+        /* Dot style */
+        .status-dot {
+            width: 20px;
+            height: 20px;
+            background-color: red; /* Red by default (off) */
+            border-radius: 50%;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Status dot at top right -->
+    <div class="status-dot" id="statusDot"></div>
+
+    <div class="stopwatch" onclick="toggleStopwatch()">
+        <span id="hours">00</span>:<span id="minutes">00</span>
+    </div>
+
+    <script>
+        let timer;
+        let running = false;
+        let totalSeconds = 0;
+
+        function updateStopwatch() {
+            totalSeconds++;
+            let hours = Math.floor(totalSeconds / 3600);
+            let minutes = Math.floor((totalSeconds % 3600) / 60);
+
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+        }
+
+        function toggleStopwatch() {
+            const statusDot = document.getElementById('statusDot');
+
+            if (running) {
+                clearInterval(timer);
+                statusDot.style.backgroundColor = 'red'; // Set dot to red (off)
+            } else {
+                timer = setInterval(updateStopwatch, 1000);
+                statusDot.style.backgroundColor = 'green'; // Set dot to green (on)
+            }
+            running = !running;
+        }
+    </script>
+</body>
+</html>
