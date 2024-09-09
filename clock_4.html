@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip Stopwatch</title>
+
+    <!-- Font-face for locally hosted Digital-7 font -->
+    <style>
+        @font-face {
+            font-family: 'Digital-7';
+            src: url('digital-7.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .stopwatch {
+            color: white;
+            font-size: 100px;
+            text-align: center;
+            cursor: pointer;
+            font-family: 'Digital-7', sans-serif; /* Classic calculator font */
+            display: flex;
+        }
+
+        .time-container {
+            position: relative;
+            perspective: 1000px;
+            margin: 0 20px;
+        }
+
+        .flip-clock {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 150px;
+            height: 200px;
+            background-color: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            color: white;
+            font-size: 100px;
+        }
+
+        .top, .bottom {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            background-color: #333;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Digital-7', sans-serif;
+        }
+
+        .top {
+            top: 0;
+            border-bottom: 2px solid #111;
+        }
+
+        .bottom {
+            bottom: 0;
+            border-top: 2px solid #111;
+        }
+
+        .flip {
+            animation: flip 0.6s ease forwards;
+        }
+
+        @keyframes flip {
+            0% {
+                transform: rotateX(0deg);
+            }
+            50% {
+                transform: rotateX(-90deg);
+            }
+            100% {
+                transform: rotateX(0deg);
+            }
+        }
+
+        /* Dot style */
+        .status-dot {
+            width: 20px;
+            height: 20px;
+            background-color: red; /* Red by default (off) */
+            border-radius: 50%;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Status dot at top right -->
+    <div class="status-dot" id="statusDot"></div>
+
+    <div class="stopwatch" onclick="toggleStopwatch()">
+        <!-- Time display containers -->
+        <div class="time-container">
+            <div class="flip-clock">
+                <div class="top" id="hoursTop">00</div>
+                <div class="bottom" id="hoursBottom">00</div>
+            </div>
+        </div>
+
+        <div class="time-container">
+            <div class="flip-clock">
+                <div class="top" id="minutesTop">00</div>
+                <div class="bottom" id="minutesBottom">00</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timer;
+        let running = false;
+        let totalSeconds = 0;
+
+        function updateStopwatch() {
+            totalSeconds++;
+            let hours = Math.floor(totalSeconds / 3600);
+            let minutes = Math.floor((totalSeconds % 3600) / 60);
+
+            // Update hours
+            updateTime('hours', hours);
+            // Update minutes
+            updateTime('minutes', minutes);
+        }
+
+        function updateTime(unit, value) {
+            let top = document.getElementById(unit + 'Top');
+            let bottom = document.getElementById(unit + 'Bottom');
+
+            // Only update if the value has changed
+            if (top.textContent !== value.toString().padStart(2, '0')) {
+                top.classList.remove('flip');
+                bottom.classList.remove('flip');
+
+                // Update top immediately
+                top.textContent = value.toString().padStart(2, '0');
+
+                // Add flip animation
+                setTimeout(() => {
+                    top.classList.add('flip');
+                    bottom.classList.add('flip');
+                    bottom.textContent = value.toString().padStart(2, '0');
+                }, 10);
+            }
+        }
+
+        function toggleStopwatch() {
+            const statusDot = document.getElementById('statusDot');
+
+            if (running) {
+                clearInterval(timer);
+                statusDot.style.backgroundColor = 'red'; // Set dot to red (off)
+            } else {
+                timer = setInterval(updateStopwatch, 1000);
+                statusDot.style.backgroundColor = 'green'; // Set dot to green (on)
+            }
+            running = !running;
+        }
+    </script>
+</body>
+</html>
