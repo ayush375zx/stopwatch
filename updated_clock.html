@@ -115,6 +115,23 @@
             margin-bottom: 10px;
         }
 
+        .task-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .task-action-button {
+            font-family: 'Digital-7', sans-serif;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border: none;
+            color: white;
+        }
+
         .stats {
             font-family: 'Digital-7', sans-serif;
             font-size: 40px;
@@ -149,7 +166,7 @@
         let running = false;
         let totalSeconds = 0;
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        let currentTask = null;
+        let currentTaskIndex = null;
 
         // Toggle menu open/close
         function toggleMenu() {
@@ -171,12 +188,10 @@
         function newTask() {
             const taskName = prompt("Enter the task name:");
             if (taskName) {
-                currentTask = taskName;
-                document.getElementById('taskName').textContent = taskName;
+                currentTaskIndex = tasks.length;
                 tasks.push({ name: taskName, time: 0 });
                 saveTasksToLocalStorage();
-                resetStopwatch();
-                showStopwatch();
+                loadTask(currentTaskIndex);  // Immediately load the newly created task
             }
         }
 
@@ -195,16 +210,53 @@
                 const taskItem = document.createElement('div');
                 taskItem.className = 'task-item';
                 taskItem.textContent = task.name;
+
+                const taskActions = document.createElement('div');
+                taskActions.className = 'task-actions';
+
+                const renameButton = document.createElement('button');
+                renameButton.textContent = 'Rename';
+                renameButton.className = 'task-action-button';
+                renameButton.onclick = () => renameTask(index);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'task-action-button';
+                deleteButton.onclick = () => deleteTask(index);
+
+                taskActions.appendChild(renameButton);
+                taskActions.appendChild(deleteButton);
+                taskItem.appendChild(taskActions);
+
                 taskItem.onclick = () => loadTask(index);
                 tasksList.appendChild(taskItem);
             });
         }
 
+        // Rename task
+        function renameTask(index) {
+            const newName = prompt("Enter the new task name:", tasks[index].name);
+            if (newName) {
+                tasks[index].name = newName;
+                saveTasksToLocalStorage();
+                openExistingTasks(); // Reload the list to show updated names
+            }
+        }
+
+        // Delete task
+        function deleteTask(index) {
+            if (confirm("Are you sure you want to delete this task?")) {
+                tasks.splice(index, 1); // Remove the task from the array
+                saveTasksToLocalStorage();
+                openExistingTasks(); // Reload the list to show updated tasks
+            }
+        }
+
         // Load a task and start stopwatch
         function loadTask(index) {
-            currentTask = tasks[index].name;
+            currentTaskIndex = index;
             totalSeconds = tasks[index].time;
-            document.getElementById('taskName').textContent = currentTask;
+            document.getElementById('taskName').textContent = tasks[index].name;
             updateStopwatchDisplay();
             showStopwatch();
         }
@@ -231,38 +283,26 @@
             document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
         }
 
-        function updateStopwatch() {
-            totalSeconds++;
-            tasks.find(task => task.name === currentTask).time = totalSeconds;
-            updateStopwatchDisplay();
-            saveTasksToLocalStorage(); // Save the updated time to localStorage
-        }
-
         function toggleStopwatch() {
             const statusDot = document.getElementById('statusDot');
             if (running) {
                 clearInterval(timer);
-                statusDot.style.backgroundColor = 'red';
+                statusDot.style.backgroundColor = 'red'; // Set dot to red (off)
             } else {
-                timer = setInterval(updateStopwatch, 1000);
-                statusDot.style.backgroundColor = 'green';
+                timer = setInterval(() => {
+                    totalSeconds++;
+                    updateStopwatchDisplay();
+                    tasks[currentTaskIndex].time = totalSeconds;
+                    saveTasksToLocalStorage();
+                }, 1000);
+                statusDot.style.backgroundColor = 'green'; // Set dot to green (on)
             }
             running = !running;
         }
 
         function showStopwatch() {
-            const content = document.querySelector('.content');
-            content.innerHTML = `
-                <div class="task-name" id="taskName">${currentTask}</div>
-                <div class="stopwatch">
-                    <span id="hours">${Math.floor(totalSeconds / 3600).toString().padStart(2, '0')}</span>:<span id="minutes">${Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')}</span>
-                </div>
-            `;
-        }
-
-        // Initialize tasks if page is refreshed
-        if (tasks.length > 0) {
-            openExistingTasks(); // Show the existing tasks if there are any saved
+            document.querySelector('.stopwatch').style.display = 'block';
+            document.getElementById('statusDot').style.display = 'block';
         }
     </script>
 </body>
