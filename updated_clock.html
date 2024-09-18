@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch Task Manager</title>
+
+    <style>
+        @font-face {
+            font-family: 'Digital-7';
+            src: url('digital-7.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        .menu {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+        }
+
+        .menu-icon {
+            width: 30px;
+            height: 5px;
+            background-color: white;
+            margin: 6px 0;
+            transition: transform 0.3s ease;
+        }
+
+        .menu.open .menu-icon:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .menu.open .menu-icon:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu.open .menu-icon:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .menu-options {
+            position: absolute;
+            top: 20px;
+            left: 60px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-options.open {
+            display: flex;
+        }
+
+        .menu-option {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 20px;
+            font-family: 'Digital-7', sans-serif;
+            opacity: 0;
+            transform: translateX(-100%);
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .menu-option.open {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .stopwatch {
+            font-size: 100px;
+            text-align: center;
+            font-family: 'Digital-7', sans-serif;
+        }
+
+        .task-name {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .tasks-list {
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .task-item {
+            font-family: 'Digital-7', sans-serif;
+            font-size: 24px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            font-family: 'Digital-7', sans-serif;
+            font-size: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu" onclick="toggleMenu()">
+        <div class="menu-icon"></div>
+        <div class="menu-icon"></div>
+        <div class="menu-icon"></div>
+    </div>
+
+    <div class="menu-options">
+        <div class="menu-option" onclick="newTask()">New Task</div>
+        <div class="menu-option" onclick="openExistingTasks()">Open Existing Tasks</div>
+        <div class="menu-option" onclick="viewStats()">Stats</div>
+    </div>
+
+    <div class="status-dot" id="statusDot"></div>
+
+    <div class="content">
+        <div class="task-name" id="taskName"></div>
+        <div class="stopwatch" id="stopwatch">
+            <span id="hours">00</span>:<span id="minutes">00</span>
+        </div>
+    </div>
+
+    <script>
+        let timer;
+        let running = false;
+        let totalSeconds = 0;
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentTask = null;
+
+        // Toggle menu open/close
+        function toggleMenu() {
+            const menu = document.querySelector('.menu');
+            const menuOptions = document.querySelectorAll('.menu-option');
+            const menuOptionsContainer = document.querySelector('.menu-options');
+
+            menu.classList.toggle('open');
+            menuOptionsContainer.classList.toggle('open');
+
+            menuOptions.forEach((option, index) => {
+                setTimeout(() => {
+                    option.classList.toggle('open');
+                }, index * 150);
+            });
+        }
+
+        // Start a new task
+        function newTask() {
+            const taskName = prompt("Enter the task name:");
+            if (taskName) {
+                currentTask = taskName;
+                document.getElementById('taskName').textContent = taskName;
+                tasks.push({ name: taskName, time: 0 });
+                saveTasksToLocalStorage();
+                resetStopwatch();
+                showStopwatch();
+            }
+        }
+
+        // Save tasks to localStorage
+        function saveTasksToLocalStorage() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Open existing tasks
+        function openExistingTasks() {
+            const content = document.querySelector('.content');
+            content.innerHTML = '<div class="tasks-list"></div>';
+            const tasksList = document.querySelector('.tasks-list');
+
+            tasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.textContent = task.name;
+                taskItem.onclick = () => loadTask(index);
+                tasksList.appendChild(taskItem);
+            });
+        }
+
+        // Load a task and start stopwatch
+        function loadTask(index) {
+            currentTask = tasks[index].name;
+            totalSeconds = tasks[index].time;
+            document.getElementById('taskName').textContent = currentTask;
+            updateStopwatchDisplay();
+            showStopwatch();
+        }
+
+        // View stats
+        function viewStats() {
+            const totalTime = tasks.reduce((sum, task) => sum + task.time, 0);
+            const hours = Math.floor(totalTime / 3600);
+            const minutes = Math.floor((totalTime % 3600) / 60);
+            document.querySelector('.content').innerHTML = `<div class="stats">Total Time: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}</div>`;
+        }
+
+        function resetStopwatch() {
+            clearInterval(timer);
+            totalSeconds = 0;
+            updateStopwatchDisplay();
+            toggleStopwatch();
+        }
+
+        function updateStopwatchDisplay() {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+        }
+
+        function updateStopwatch() {
+            totalSeconds++;
+            tasks.find(task => task.name === currentTask).time = totalSeconds;
+            updateStopwatchDisplay();
+            saveTasksToLocalStorage(); // Save the updated time to localStorage
+        }
+
+        function toggleStopwatch() {
+            const statusDot = document.getElementById('statusDot');
+            if (running) {
+                clearInterval(timer);
+                statusDot.style.backgroundColor = 'red';
+            } else {
+                timer = setInterval(updateStopwatch, 1000);
+                statusDot.style.backgroundColor = 'green';
+            }
+            running = !running;
+        }
+
+        function showStopwatch() {
+            const content = document.querySelector('.content');
+            content.innerHTML = `
+                <div class="task-name" id="taskName">${currentTask}</div>
+                <div class="stopwatch">
+                    <span id="hours">${Math.floor(totalSeconds / 3600).toString().padStart(2, '0')}</span>:<span id="minutes">${Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')}</span>
+                </div>
+            `;
+        }
+
+        // Initialize tasks if page is refreshed
+        if (tasks.length > 0) {
+            openExistingTasks(); // Show the existing tasks if there are any saved
+        }
+    </script>
+</body>
+</html>
