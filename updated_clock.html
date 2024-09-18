@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -139,6 +140,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="menu" onclick="toggleMenu()">
         <div class="menu-icon"></div>
@@ -292,8 +294,8 @@
                 timer = setInterval(() => {
                     totalSeconds++;
                     updateStopwatchDisplay();
-                    tasks[currentTaskIndex].time = totalSeconds;
-                    saveTasksToLocalStorage();
+                    tasks[currentTaskIndex].time = totalSeconds; // Update current task's time
+                    saveTasksToLocalStorage(); // Persist task data
                 }, 1000);
                 statusDot.style.backgroundColor = 'green'; // Set dot to green (on)
             }
@@ -304,6 +306,13 @@
             document.querySelector('.stopwatch').style.display = 'block';
             document.getElementById('statusDot').style.display = 'block';
         }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!tasks.length) {
+                document.querySelector('.content').innerHTML = '<p style="font-family: \'Digital-7\', sans-serif; text-align: center;">No tasks created yet.</p>';
+            }
+        });
     </script>
 </body>
 </html>
