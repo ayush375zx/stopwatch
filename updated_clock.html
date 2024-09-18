@@ -26,6 +26,28 @@
             color: white;
         }
 
+        .stopwatch {
+            font-size: 100px;
+            text-align: center;
+            font-family: 'Digital-7', sans-serif;
+            cursor: pointer; /* Allows clicking anywhere on the stopwatch */
+        }
+
+        .task-name {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
         .menu {
             position: absolute;
             top: 20px;
@@ -38,7 +60,6 @@
             height: 5px;
             background-color: white;
             margin: 6px 0;
-            transition: transform 0.3s ease;
         }
 
         .menu.open .menu-icon:nth-child(1) {
@@ -81,63 +102,6 @@
         .menu-option.open {
             opacity: 1;
             transform: translateX(0);
-        }
-
-        .stopwatch {
-            font-size: 100px;
-            text-align: center;
-            font-family: 'Digital-7', sans-serif;
-        }
-
-        .task-name {
-            font-size: 40px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .status-dot {
-            width: 20px;
-            height: 20px;
-            background-color: red;
-            border-radius: 50%;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-
-        .tasks-list {
-            margin-top: 50px;
-            text-align: center;
-        }
-
-        .task-item {
-            font-family: 'Digital-7', sans-serif;
-            font-size: 24px;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        .task-actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 5px;
-        }
-
-        .task-action-button {
-            font-family: 'Digital-7', sans-serif;
-            font-size: 18px;
-            cursor: pointer;
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 10px;
-            border: none;
-            color: white;
-        }
-
-        .stats {
-            font-family: 'Digital-7', sans-serif;
-            font-size: 40px;
-            text-align: center;
         }
     </style>
 </head>
@@ -194,7 +158,7 @@
                 currentTaskIndex = tasks.length;
                 tasks.push({ name: taskName, time: 0 });
                 saveTasksToLocalStorage();
-                loadTask(currentTaskIndex);  // Load the newly created task
+                loadTask(currentTaskIndex);  // Immediately load the newly created task
             }
         }
 
@@ -214,55 +178,18 @@
                 taskItem.className = 'task-item';
                 taskItem.textContent = task.name;
 
-                const taskActions = document.createElement('div');
-                taskActions.className = 'task-actions';
-
-                const renameButton = document.createElement('button');
-                renameButton.textContent = 'Rename';
-                renameButton.className = 'task-action-button';
-                renameButton.onclick = () => renameTask(index);
-
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.className = 'task-action-button';
-                deleteButton.onclick = () => deleteTask(index);
-
-                taskActions.appendChild(renameButton);
-                taskActions.appendChild(deleteButton);
-                taskItem.appendChild(taskActions);
-
                 taskItem.onclick = () => loadTask(index);
                 tasksList.appendChild(taskItem);
             });
         }
 
-        // Rename task
-        function renameTask(index) {
-            const newName = prompt("Enter the new task name:", tasks[index].name);
-            if (newName) {
-                tasks[index].name = newName;
-                saveTasksToLocalStorage();
-                openExistingTasks(); // Reload the list to show updated names
-            }
-        }
-
-        // Delete task
-        function deleteTask(index) {
-            if (confirm("Are you sure you want to delete this task?")) {
-                tasks.splice(index, 1); // Remove the task from the array
-                saveTasksToLocalStorage();
-                openExistingTasks(); // Reload the list to show updated tasks
-            }
-        }
-
-        // Load a task and continue stopwatch from previous time
+        // Load a task and start stopwatch
         function loadTask(index) {
             currentTaskIndex = index;
             totalSeconds = tasks[index].time;
             document.getElementById('taskName').textContent = tasks[index].name;
             updateStopwatchDisplay();
             showStopwatch();
-            if (running) toggleStopwatch(); // Stop the stopwatch if it's running
         }
 
         // View stats
@@ -282,9 +209,10 @@
 
         function toggleStopwatch() {
             const statusDot = document.getElementById('statusDot');
+
             if (running) {
                 clearInterval(timer);
-                statusDot.style.backgroundColor = 'red';
+                statusDot.style.backgroundColor = 'red'; // Set dot to red (off)
             } else {
                 timer = setInterval(() => {
                     totalSeconds++;
@@ -292,21 +220,24 @@
                     saveTasksToLocalStorage();
                     updateStopwatchDisplay();
                 }, 1000);
-                statusDot.style.backgroundColor = 'green';
+                statusDot.style.backgroundColor = 'green'; // Set dot to green (on)
             }
             running = !running;
         }
 
         function showStopwatch() {
-            document.querySelector('.content').innerHTML = `
-                <div class="task-name" id="taskName">${tasks[currentTaskIndex].name}</div>
-                <div class="stopwatch" id="stopwatch" onclick="toggleStopwatch()">
-                    <span id="hours">${Math.floor(totalSeconds / 3600).toString().padStart(2, '0')}</span>:
-                    <span id="minutes">${Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')}</span>
-                </div>
-            `;
+            document.querySelector('.stopwatch').style.display = 'block';
+            document.getElementById('statusDot').style.display = 'block';
         }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!tasks.length) {
+                document.querySelector('.content').innerHTML = '<p style="font-family: \'Digital-7\', sans-serif; text-align: center;">No tasks created yet.</p>';
+            }
+        });
     </script>
 </body>
 
 </html>
+
