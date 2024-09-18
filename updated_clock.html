@@ -92,6 +92,7 @@
         .task-name {
             font-size: 40px;
             margin-bottom: 20px;
+            text-align: center;
         }
 
         .status-dot {
@@ -158,7 +159,7 @@
 
     <div class="content">
         <div class="task-name" id="taskName"></div>
-        <div class="stopwatch" id="stopwatch">
+        <div class="stopwatch" id="stopwatch" onclick="toggleStopwatch()">
             <span id="hours">00</span>:<span id="minutes">00</span>
         </div>
     </div>
@@ -193,7 +194,7 @@
                 currentTaskIndex = tasks.length;
                 tasks.push({ name: taskName, time: 0 });
                 saveTasksToLocalStorage();
-                loadTask(currentTaskIndex);  // Immediately load the newly created task
+                loadTask(currentTaskIndex);  // Load the newly created task
             }
         }
 
@@ -254,13 +255,14 @@
             }
         }
 
-        // Load a task and start stopwatch
+        // Load a task and continue stopwatch from previous time
         function loadTask(index) {
             currentTaskIndex = index;
             totalSeconds = tasks[index].time;
             document.getElementById('taskName').textContent = tasks[index].name;
             updateStopwatchDisplay();
             showStopwatch();
+            if (running) toggleStopwatch(); // Stop the stopwatch if it's running
         }
 
         // View stats
@@ -269,13 +271,6 @@
             const hours = Math.floor(totalTime / 3600);
             const minutes = Math.floor((totalTime % 3600) / 60);
             document.querySelector('.content').innerHTML = `<div class="stats">Total Time: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}</div>`;
-        }
-
-        function resetStopwatch() {
-            clearInterval(timer);
-            totalSeconds = 0;
-            updateStopwatchDisplay();
-            toggleStopwatch();
         }
 
         function updateStopwatchDisplay() {
@@ -289,30 +284,29 @@
             const statusDot = document.getElementById('statusDot');
             if (running) {
                 clearInterval(timer);
-                statusDot.style.backgroundColor = 'red'; // Set dot to red (off)
+                statusDot.style.backgroundColor = 'red';
             } else {
                 timer = setInterval(() => {
                     totalSeconds++;
+                    tasks[currentTaskIndex].time = totalSeconds;
+                    saveTasksToLocalStorage();
                     updateStopwatchDisplay();
-                    tasks[currentTaskIndex].time = totalSeconds; // Update current task's time
-                    saveTasksToLocalStorage(); // Persist task data
                 }, 1000);
-                statusDot.style.backgroundColor = 'green'; // Set dot to green (on)
+                statusDot.style.backgroundColor = 'green';
             }
             running = !running;
         }
 
         function showStopwatch() {
-            document.querySelector('.stopwatch').style.display = 'block';
-            document.getElementById('statusDot').style.display = 'block';
+            document.querySelector('.content').innerHTML = `
+                <div class="task-name" id="taskName">${tasks[currentTaskIndex].name}</div>
+                <div class="stopwatch" id="stopwatch" onclick="toggleStopwatch()">
+                    <span id="hours">${Math.floor(totalSeconds / 3600).toString().padStart(2, '0')}</span>:
+                    <span id="minutes">${Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')}</span>
+                </div>
+            `;
         }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!tasks.length) {
-                document.querySelector('.content').innerHTML = '<p style="font-family: \'Digital-7\', sans-serif; text-align: center;">No tasks created yet.</p>';
-            }
-        });
     </script>
 </body>
+
 </html>
