@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stopwatch Task Manager</title>
-
     <style>
         @font-face {
             font-family: 'Digital-7';
             src: url('digital-7.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
         }
 
         body {
@@ -118,6 +114,19 @@
             right: 20px;
         }
 
+        .reset-button {
+            width: 20px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+
         .tasks-list {
             margin-top: 50px;
             text-align: center;
@@ -167,10 +176,8 @@
             color: white;
             border: none;
         }
-
     </style>
 </head>
-
 <body>
     <div class="menu" onclick="toggleMenu()">
         <div class="menu-icon"></div>
@@ -185,12 +192,10 @@
     </div>
 
     <div class="status-dot" id="statusDot"></div>
+    <button class="reset-button" onclick="resetStopwatch()"></button>
 
     <div class="stopwatch-container" id="stopwatchContainer">
-        <div class="task-name" id="taskName"></div>
-        <div class="stopwatch" id="stopwatch" onclick="toggleStopwatch()">
-            <span id="hours">00</span>:<span id="minutes">00</span>
-        </div>
+        <!-- This will be dynamically updated with the home stopwatch view -->
     </div>
 
     <button class="home-button" onclick="goToHome()">Home</button>
@@ -201,24 +206,22 @@
         let totalSeconds = 0;
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let currentTaskIndex = null;
+        let sessionStartTime = 0;
 
-        // Toggle menu open/close
         function toggleMenu() {
             const menu = document.querySelector('.menu');
-            const menuOptions = document.querySelectorAll('.menu-option');
-            const menuOptionsContainer = document.querySelector('.menu-options');
+            const menuOptions = document.querySelector('.menu-options');
 
             menu.classList.toggle('open');
-            menuOptionsContainer.classList.toggle('open');
+            menuOptions.classList.toggle('open');
 
-            menuOptions.forEach((option, index) => {
+            document.querySelectorAll('.menu-option').forEach((option, index) => {
                 setTimeout(() => {
                     option.classList.toggle('open');
                 }, index * 150);
             });
         }
 
-        // Start a new task
         function newTask() {
             const taskName = prompt("Enter the task name:");
             if (taskName) {
@@ -229,12 +232,10 @@
             }
         }
 
-        // Save tasks to localStorage
         function saveTasksToLocalStorage() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
         }
 
-        // Open existing tasks
         function openExistingTasks() {
             const content = document.querySelector('.stopwatch-container');
             content.innerHTML = '<div class="tasks-list"></div>';
@@ -252,7 +253,7 @@
                 renameButton.textContent = 'Rename';
                 renameButton.className = 'task-action-button';
                 renameButton.onclick = (event) => {
-                    event.stopPropagation(); // Prevent triggering taskItem.onclick
+                    event.stopPropagation();
                     renameTask(index);
                 };
 
@@ -260,7 +261,7 @@
                 deleteButton.textContent = 'Delete';
                 deleteButton.className = 'task-action-button';
                 deleteButton.onclick = (event) => {
-                    event.stopPropagation(); // Prevent triggering taskItem.onclick
+                    event.stopPropagation();
                     deleteTask(index);
                 };
 
@@ -268,39 +269,34 @@
                 taskActions.appendChild(deleteButton);
                 taskItem.appendChild(taskActions);
 
-                taskItem.onclick = () => loadTask(index); // Clicking opens stopwatch
+                taskItem.onclick = () => loadTask(index);
                 tasksList.appendChild(taskItem);
             });
         }
 
-        // Rename task
         function renameTask(index) {
             const newName = prompt("Enter the new task name:", tasks[index].name);
             if (newName) {
                 tasks[index].name = newName;
                 saveTasksToLocalStorage();
-                openExistingTasks(); // Reload the list to show updated names
+                openExistingTasks();
             }
         }
 
-        // Delete task
         function deleteTask(index) {
             if (confirm("Are you sure you want to delete this task?")) {
-                // If the deleted task is currently running, stop the stopwatch
                 if (currentTaskIndex === index && running) {
                     toggleStopwatch();
                 }
-
-                tasks.splice(index, 1); // Remove the task from the array
+                tasks.splice(index, 1);
                 saveTasksToLocalStorage();
-                openExistingTasks(); // Reload the list to show updated tasks
+                openExistingTasks();
             }
         }
 
-        // Load a task and continue stopwatch from previous time
         function loadTask(index) {
             if (running && currentTaskIndex !== index) {
-                toggleStopwatch(); // Stop any running stopwatch before loading a new task
+                toggleStopwatch();
             }
 
             currentTaskIndex = index;
@@ -309,17 +305,29 @@
             updateStopwatchDisplay();
         }
 
-        // View stats
         function viewStats() {
             const totalTime = tasks.reduce((sum, task) => sum + task.time, 0);
             const hours = Math.floor(totalTime / 3600);
             const minutes = Math.floor((totalTime % 3600) / 60);
             const seconds = totalTime % 60;
 
-            document.querySelector('.stopwatch-container').innerHTML = `
+            const content = document.querySelector('.stopwatch-container');
+            content.innerHTML = `
                 <div class="stats">
-                    Total Time: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}
-                </div>`;
+                    <p>Total Time Spent:</p>
+                    <p>${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</p>
+                </div>
+            `;
+        }
+
+        function showStopwatch() {
+            const content = document.querySelector('.stopwatch-container');
+            content.innerHTML = `
+                <div class="task-name">${tasks[currentTaskIndex].name}</div>
+                <div class="stopwatch" onclick="toggleStopwatch()">
+                    <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+                </div>
+            `;
         }
 
         function updateStopwatchDisplay() {
@@ -329,6 +337,7 @@
 
             document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
             document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
         }
 
         function toggleStopwatch() {
@@ -336,11 +345,11 @@
             if (running) {
                 clearInterval(timer);
                 statusDot.style.backgroundColor = 'red';
+                tasks[currentTaskIndex].time = totalSeconds; // Save the time spent
+                saveTasksToLocalStorage();
             } else {
                 timer = setInterval(() => {
                     totalSeconds++;
-                    tasks[currentTaskIndex].time = totalSeconds;
-                    saveTasksToLocalStorage();
                     updateStopwatchDisplay();
                 }, 1000);
                 statusDot.style.backgroundColor = 'green';
@@ -348,21 +357,20 @@
             running = !running;
         }
 
-        function showStopwatch() {
-            const content = document.querySelector('.stopwatch-container');
-            content.innerHTML = `
-                <div class="task-name" id="taskName">${tasks[currentTaskIndex].name}</div>
-                <div class="stopwatch" id="stopwatch" onclick="toggleStopwatch()">
-                    <span id="hours">${Math.floor(totalSeconds / 3600).toString().padStart(2, '0')}</span>:<span id="minutes">${Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')}</span>
-                </div>
-            `;
+        function resetStopwatch() {
+            if (currentTaskIndex !== null) {
+                totalSeconds = 0;
+                updateStopwatchDisplay();
+                if (running) {
+                    toggleStopwatch(); // Stop if currently running
+                }
+            }
         }
 
-        // Home stopwatch for temporary use (not saved to stats or tasks)
         function goToHome() {
             let tempTimer;
             let tempRunning = false;
-            let tempSeconds = 0;
+            let tempSeconds = parseInt(sessionStorage.getItem('homeStopwatchSeconds')) || 0;
             const statusDot = document.getElementById('statusDot');
             statusDot.style.backgroundColor = 'red';
 
@@ -387,6 +395,7 @@
                 if (tempRunning) {
                     clearInterval(tempTimer);
                     statusDot.style.backgroundColor = 'red';
+                    sessionStorage.setItem('homeStopwatchSeconds', tempSeconds);
                 } else {
                     tempTimer = setInterval(() => {
                         tempSeconds++;
@@ -396,24 +405,17 @@
                 }
                 tempRunning = !tempRunning;
             };
+
+            window.onbeforeunload = function () {
+                sessionStorage.setItem('homeStopwatchSeconds', tempSeconds);
+            };
+
+            updateHomeStopwatchDisplay();
         }
 
-        // Automatically stop the stopwatch when the tab is closed
-        window.onbeforeunload = function () {
-            if (running) {
-                toggleStopwatch(); // Stop the stopwatch when the user closes the tab
-            }
-        };
-
-        // Initialize the app by loading existing tasks or showing the default view
         window.onload = function () {
-            if (tasks.length > 0) {
-                openExistingTasks();
-            } else {
-                showStopwatch();
-            }
+            goToHome();
         };
     </script>
 </body>
-
 </html>
