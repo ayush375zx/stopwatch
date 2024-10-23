@@ -305,7 +305,7 @@
             content.innerHTML = `
                 <div class="task-name">${taskName}</div>
                 <div class="stopwatch" onclick="toggleStopwatch()">
-                    <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+                    <span id="hours">00</span>:<span id="minutes">00</span>
                 </div>
             `;
             updateStopwatchDisplay(); // Update the display immediately
@@ -335,7 +335,6 @@
 
             document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
             document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
-            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
         }
 
         // Start/Stop the stopwatch
@@ -370,7 +369,7 @@
             const content = document.querySelector('.stopwatch-container');
             content.innerHTML = `
                 <div class="stopwatch" id="homeStopwatch" onclick="toggleHomeStopwatch()">
-                    <span id="homeHours">00</span>:<span id="homeMinutes">00</span>:<span id="homeSeconds">00</span>
+                    <span id="homeHours">00</span>:<span id="homeMinutes">00</span>
                 </div>
             `;
 
@@ -381,7 +380,6 @@
 
                 document.getElementById('homeHours').textContent = hours.toString().padStart(2, '0');
                 document.getElementById('homeMinutes').textContent = minutes.toString().padStart(2, '0');
-                document.getElementById('homeSeconds').textContent = seconds.toString().padStart(2, '0');
             }
 
             function toggleHomeStopwatch() {
