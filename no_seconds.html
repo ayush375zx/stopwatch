@@ -210,9 +210,7 @@
     <div class="reset-button" id="resetButton" onclick="resetStopwatch()">R</div>
 
 
-    <div class="stopwatch-container" id="stopwatchContainer">
-        // Stopwatch display
-    </div>
+    <div class="stopwatch-container" id="stopwatchContainer"></div>
 
     <button class="home-button" onclick="goToHome()">Home</button>
 
@@ -304,7 +302,7 @@
         }
 
         function openExistingTasks() {
-            closeMenu();  // Close menu after selection
+            closeMenu(); 
             const content = document.querySelector('.stopwatch-container');
             content.innerHTML = '<div class="tasks-list"></div>';
             const tasksList = document.querySelector('.tasks-list');
