@@ -169,27 +169,26 @@
         }
 
         .reset-button {
-
             width: 20px;
             height: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
             border-radius: 50%;
-            background-color: white;
-            color: black;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 17px;
+            font-size: 16px;
             position: absolute;
             top: 50px;
             right: 20px;
             cursor: pointer;
-            font-weight: bold;
+            transition: background-color 0.6s ease;
             font-family: 'Digital-7', sans-serif;
-            transition: transform 0.1s ease;
         }
 
         .reset-button:active {
             transform: scale(0.7);
+            background-color: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -208,15 +207,14 @@
     </div>
 
     <div class="status-dot" id="statusDot"></div>
+    <div class="reset-button" id="resetButton" onclick="resetStopwatch()">R</div>
+
 
     <div class="stopwatch-container" id="stopwatchContainer">
-        <!-- Stopwatch display will go here -->
+        // Stopwatch display
     </div>
 
     <button class="home-button" onclick="goToHome()">Home</button>
-    <div class="reset-button" onclick="resetStopwatch()">R</div>
-
-
 
     <script>
         let timer;
@@ -224,8 +222,25 @@
         let totalSeconds = 0;
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let currentTaskIndex = null;
+        let activeTab = "home"; 
+        let tempSeconds = 0; 
+        let tempRunning = false; 
+        let tempTimer;
 
-        // Toggle menu open/close
+
+        function resetStopwatch() {
+            if (activeTab === "home") {
+                tempSeconds = 0;
+                updateHomeStopwatchDisplay();
+                sessionStorage.setItem('tempStopwatch', tempSeconds);
+            } else if (activeTab === "task" && currentTaskIndex !== null) {
+                tasks[currentTaskIndex].time = 0;
+                totalSeconds = 0;
+                updateStopwatchDisplay();
+                saveTasksToLocalStorage();
+            }
+        }
+
         function toggleMenu() {
             const menu = document.querySelector('.menu');
             const menuOptions = document.querySelectorAll('.menu-option');
@@ -241,23 +256,25 @@
             });
         }
 
-        // Start a new task and load its stopwatch
         function newTask() {
+            if (running) {
+                toggleStopwatch(); 
+            } else if (tempRunning) {
+                toggleHomeStopwatch(); 
+            }
             const taskName = prompt("Enter the task name:");
             if (taskName) {
-                currentTaskIndex = tasks.length; // Set to the index of the newly created task
+                currentTaskIndex = tasks.length; 
                 tasks.push({ name: taskName, time: 0 });
                 saveTasksToLocalStorage();
-                loadTask(currentTaskIndex); // Load the task stopwatch immediately
+                loadTask(currentTaskIndex);
             }
         }
 
-        // Save tasks to localStorage
         function saveTasksToLocalStorage() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
         }
 
-        // Open existing tasks
         function openExistingTasks() {
             const content = document.querySelector('.stopwatch-container');
             content.innerHTML = '<div class="tasks-list"></div>';
@@ -275,7 +292,7 @@
                 renameButton.textContent = 'Rename';
                 renameButton.className = 'task-action-button';
                 renameButton.onclick = (event) => {
-                    event.stopPropagation(); // Prevent triggering taskItem.onclick
+                    event.stopPropagation(); 
                     renameTask(index);
                 };
 
@@ -283,7 +300,7 @@
                 deleteButton.textContent = 'Delete';
                 deleteButton.className = 'task-action-button';
                 deleteButton.onclick = (event) => {
-                    event.stopPropagation(); // Prevent triggering taskItem.onclick
+                    event.stopPropagation(); 
                     deleteTask(index);
                 };
 
@@ -291,26 +308,24 @@
                 taskActions.appendChild(deleteButton);
                 taskItem.appendChild(taskActions);
 
-                taskItem.onclick = () => loadTask(index); // Clicking opens stopwatch
+                taskItem.onclick = () => loadTask(index); 
                 tasksList.appendChild(taskItem);
             });
         }
 
-        // Rename task
         function renameTask(index) {
             const newName = prompt("Enter the new task name:", tasks[index].name);
             if (newName) {
                 tasks[index].name = newName;
                 saveTasksToLocalStorage();
-                openExistingTasks(); // Reload the list to show updated names
+                openExistingTasks(); 
             }
         }
 
-        // Delete task
         function deleteTask(index) {
             if (confirm("Are you sure you want to delete this task?")) {
                 if (currentTaskIndex === index && running) {
-                    toggleStopwatch(); // Stop the stopwatch if the task is being tracked
+                    toggleStopwatch(); 
                 }
                 tasks.splice(index, 1);
                 saveTasksToLocalStorage();
@@ -318,27 +333,31 @@
             }
         }
 
-        // Load a task and open its stopwatch
         function loadTask(index) {
-            currentTaskIndex = index; // Set the current task to the selected one
-            totalSeconds = tasks[index].time; // Load the task's previous time
-            showTaskStopwatch(); // Show the stopwatch for the task
+            if (running) {
+                toggleStopwatch(); 
+            } else if (tempRunning) {
+                toggleHomeStopwatch();
+            }
+            activeTab = "task";
+            currentTaskIndex = index;
+            totalSeconds = tasks[index].time;
+            showTaskStopwatch();
         }
 
         // Show the stopwatch with task name
         function showTaskStopwatch() {
             const content = document.querySelector('.stopwatch-container');
-            const taskName = tasks[currentTaskIndex]?.name || 'Temporary Stopwatch'; // Default to temp if none selected
+            const taskName = tasks[currentTaskIndex]?.name || 'Temporary Stopwatch';
             content.innerHTML = `
                 <div class="task-name">${taskName}</div>
                 <div class="stopwatch" onclick="toggleStopwatch()">
                     <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
                 </div>
             `;
-            updateStopwatchDisplay(); // Update the display immediately
+            updateStopwatchDisplay();
         }
 
-        // View stats
         function viewStats() {
             const totalTime = tasks.reduce((sum, task) => sum + task.time, 0);
             const hours = Math.floor(totalTime / 3600);
@@ -354,7 +373,6 @@
             `;
         }
 
-        // Update the display of the stopwatch
         function updateStopwatchDisplay() {
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -365,14 +383,13 @@
             document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
         }
 
-        // Start/Stop the stopwatch
         function toggleStopwatch() {
             const statusDot = document.getElementById('statusDot');
             if (running) {
                 clearInterval(timer);
                 statusDot.style.backgroundColor = 'red';
                 if (currentTaskIndex !== null) {
-                    tasks[currentTaskIndex].time = totalSeconds; // Save the time spent
+                    tasks[currentTaskIndex].time = totalSeconds;
                     saveTasksToLocalStorage();
                 }
             } else {
@@ -385,92 +402,91 @@
             running = !running;
         }
 
-        // Home stopwatch functionality
-        function goToHome() {
-            let tempTimer;
-            let tempRunning = false;
-            let tempSeconds = JSON.parse(sessionStorage.getItem('tempStopwatch')) || 0; // Load from session storage
+        function updateHomeStopwatchDisplay() {
+            const hours = Math.floor(tempSeconds / 3600);
+            const minutes = Math.floor((tempSeconds % 3600) / 60);
+            const seconds = tempSeconds % 60;
 
+            document.getElementById('homeHours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('homeMinutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('homeSeconds').textContent = seconds.toString().padStart(2, '0');
+        }
+
+        function toggleHomeStopwatch() {
+            const statusDot = document.getElementById('statusDot');
+            if (tempRunning) {
+                clearInterval(tempTimer);
+                statusDot.style.backgroundColor = 'red';
+                sessionStorage.setItem('tempStopwatch', tempSeconds);
+            } else {
+                tempTimer = setInterval(() => {
+                    tempSeconds++;
+                    updateHomeStopwatchDisplay();
+                }, 1000);
+                statusDot.style.backgroundColor = 'green';
+            }
+            tempRunning = !tempRunning;
+        }
+
+        function goToHome() {
+            if (running) {
+                toggleStopwatch(); 
+            }
+
+            activeTab = "home";
             const statusDot = document.getElementById('statusDot');
             statusDot.style.backgroundColor = 'red';
 
             const content = document.querySelector('.stopwatch-container');
             content.innerHTML = `
-                <div class="stopwatch" id="homeStopwatch" onclick="toggleHomeStopwatch()">
-                    <span id="homeHours">00</span>:<span id="homeMinutes">00</span>:<span id="homeSeconds">00</span>
-                </div>
+            <div class="stopwatch" id="homeStopwatch" onclick="toggleHomeStopwatch()">
+            <span id="homeHours">00</span>:<span id="homeMinutes">00</span>:<span id="homeSeconds">00</span>
+            </div>
             `;
+            window.toggleHomeStopwatch = toggleHomeStopwatch;
+            updateHomeStopwatchDisplay();
+        }
 
-            function updateHomeStopwatchDisplay() {
-                const hours = Math.floor(tempSeconds / 3600);
-                const minutes = Math.floor((tempSeconds % 3600) / 60);
-                const seconds = tempSeconds % 60;
+        document.addEventListener('visibilitychange', () => {
+            const statusDot = document.getElementById('statusDot');
 
-                document.getElementById('homeHours').textContent = hours.toString().padStart(2, '0');
-                document.getElementById('homeMinutes').textContent = minutes.toString().padStart(2, '0');
-                document.getElementById('homeSeconds').textContent = seconds.toString().padStart(2, '0');
-            }
-
-            function toggleHomeStopwatch() {
-                if (tempRunning) {
+            if (document.hidden) {
+                if (running) {  
+                    clearInterval(timer);
+                    statusDot.style.backgroundColor = 'red';
+                    if (currentTaskIndex !== null) {
+                        tasks[currentTaskIndex].time = totalSeconds; 
+                        saveTasksToLocalStorage();
+                    }
+                    running = false;
+                }
+                if (tempRunning) { 
                     clearInterval(tempTimer);
                     statusDot.style.backgroundColor = 'red';
-                    sessionStorage.setItem('tempStopwatch', tempSeconds); // Save to session storage
-                } else {
+                    sessionStorage.setItem('tempStopwatch', tempSeconds);
+                    tempRunning = false;
+                }
+            } else {
+                if (activeTab === "task" && currentTaskIndex !== null) {
+                    timer = setInterval(() => {
+                        totalSeconds++;
+                        updateStopwatchDisplay();
+                    }, 1000);
+                    statusDot.style.backgroundColor = 'green';
+                    running = true;
+                } else if (activeTab === "home") {
                     tempTimer = setInterval(() => {
                         tempSeconds++;
                         updateHomeStopwatchDisplay();
                     }, 1000);
                     statusDot.style.backgroundColor = 'green';
+                    tempRunning = true;
                 }
-                tempRunning = !tempRunning;
-            }
-
-            window.toggleHomeStopwatch = toggleHomeStopwatch;
-            updateHomeStopwatchDisplay();
-        }
-
-        function resetStopwatch() {
-            totalSeconds = 0; // Reset task stopwatch time
-            tempSeconds = 0;  // Reset home stopwatch time
-
-            // Update the display for the task stopwatch
-            if (currentTaskIndex !== null && tasks[currentTaskIndex]) {
-                tasks[currentTaskIndex].time = totalSeconds;
-                saveTasksToLocalStorage();
-                updateStopwatchDisplay();
-            }
-
-            // Update the display for the home stopwatch
-            const homeHours = document.getElementById('homeHours');
-            const homeMinutes = document.getElementById('homeMinutes');
-            const homeSeconds = document.getElementById('homeSeconds');
-
-            if (homeHours && homeMinutes && homeSeconds) {
-                homeHours.textContent = '00';
-                homeMinutes.textContent = '00';
-                homeSeconds.textContent = '00';
-            }
-            sessionStorage.setItem('tempStopwatch', tempSeconds); // Save reset home stopwatch to session storage
-        }
-
-        // Handle tab visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && running) {
-                clearInterval(timer);
-                const statusDot = document.getElementById('statusDot');
-                statusDot.style.backgroundColor = 'red';
-                if (currentTaskIndex !== null) {
-                    tasks[currentTaskIndex].time = totalSeconds; // Save the time spent
-                    saveTasksToLocalStorage();
-                }
-                running = false;
             }
         });
 
-        // Initialize the app
         function initialize() {
-            goToHome(); // Load the home stopwatch by default when the page loads
+            goToHome(); 
         }
 
         window.onload = initialize;
