@@ -187,8 +187,62 @@
         }
 
         .reset-button:active {
-            transform: scale(0.7);
+            transform: scale(0.9);
             background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .background-run-toggle {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-family: 'Digital-7', sans-serif;
+            color: white;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .background-run-toggle.open {
+            width: 200px;
+            height: 20px;
+            border-radius: 20px;
+        }
+
+        .background-run-text {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .background-run-toggle.open .background-run-text {
+            display: block;
+            opacity: 1;
+        }
+
+        .background-run-toggle.green {
+            background-color: green;
+        }
+
+        .background-run-initial {
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            display: block;
+            transition: opacity 0.5s ease;
+        }
+
+        .background-run-toggle.open .background-run-initial {
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -208,6 +262,13 @@
 
     <div class="status-dot" id="statusDot"></div>
     <div class="reset-button" id="resetButton" onclick="resetStopwatch()">R</div>
+    <div id="backgroundRunToggle" class="background-run-toggle" onclick="toggleBackgroundRun()"
+        onmouseleave="closeToggle()">
+        <span id="backgroundRunInitial" class="background-run-initial">B.R</span>
+        <span id="backgroundRunText" class="background-run-text">Background Run Disabled</span>
+    </div>
+
+
 
 
     <div class="stopwatch-container" id="stopwatchContainer"></div>
@@ -215,6 +276,8 @@
     <button class="home-button" onclick="goToHome()">Home</button>
 
     <script>
+        console.log("version orsws1.9 (latest as of 17/11/2024)")
+        console.log("made by: \u00A9 ayush");
         let timer;
         let running = false;
         let totalSeconds = 0;
@@ -228,7 +291,30 @@
         let tempUserStopped = false;
         let hasStarted = false;
         let tempHasStarted = false;
+        let backgroundRunEnabled = false;
 
+        function toggleBackgroundRun() {
+            const toggleButton = document.getElementById('backgroundRunToggle');
+            const toggleText = document.getElementById('backgroundRunText');
+            backgroundRunEnabled = !backgroundRunEnabled;
+            if (backgroundRunEnabled) {
+                toggleButton.classList.add('green');
+                toggleText.textContent = 'Background Run Enabled';
+            } else {
+                toggleButton.classList.remove('green');
+                toggleText.textContent = 'Background Run Disabled';
+            }
+            toggleButton.classList.add('open');
+        }
+
+        function closeToggle() {
+            const toggle = document.getElementById("backgroundRunToggle");
+            toggle.classList.add("close-delayed");
+            setTimeout(() => {
+                toggle.classList.remove("open");
+                toggle.classList.remove("close-delayed");
+            }, 300);
+        }
 
         function resetStopwatch() {
             if (activeTab === "home") {
@@ -302,7 +388,7 @@
         }
 
         function openExistingTasks() {
-            closeMenu(); 
+            closeMenu();
             const content = document.querySelector('.stopwatch-container');
             content.innerHTML = '<div class="tasks-list"></div>';
             const tasksList = document.querySelector('.tasks-list');
@@ -334,7 +420,6 @@
                 taskActions.appendChild(renameButton);
                 taskActions.appendChild(deleteButton);
                 taskItem.appendChild(taskActions);
-
                 taskItem.onclick = () => loadTask(index);
                 tasksList.appendChild(taskItem);
             });
@@ -404,7 +489,6 @@
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = totalSeconds % 60;
-
             document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
             document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
             document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
@@ -483,39 +567,41 @@
         }
 
         document.addEventListener('visibilitychange', () => {
-            const statusDot = document.getElementById('statusDot');
+            if (!backgroundRunEnabled) {
+                const statusDot = document.getElementById('statusDot');
 
-            if (document.hidden) {
-                if (running) {
-                    clearInterval(timer);
-                    statusDot.style.backgroundColor = 'red';
-                    if (currentTaskIndex !== null) {
-                        tasks[currentTaskIndex].time = totalSeconds;
-                        saveTasksToLocalStorage();
+                if (document.hidden) {
+                    if (running) {
+                        clearInterval(timer);
+                        statusDot.style.backgroundColor = 'red';
+                        if (currentTaskIndex !== null) {
+                            tasks[currentTaskIndex].time = totalSeconds;
+                            saveTasksToLocalStorage();
+                        }
+                        running = false;
                     }
-                    running = false;
-                }
-                if (tempRunning) {
-                    clearInterval(tempTimer);
-                    statusDot.style.backgroundColor = 'red';
-                    sessionStorage.setItem('tempStopwatch', tempSeconds);
-                    tempRunning = false;
-                }
-            } else {
-                if (activeTab === "task" && currentTaskIndex !== null && hasStarted && !userStopped) {
-                    timer = setInterval(() => {
-                        totalSeconds++;
-                        updateStopwatchDisplay();
-                    }, 1000);
-                    statusDot.style.backgroundColor = 'green';
-                    running = true;
-                } else if (activeTab === "home" && tempHasStarted && !tempUserStopped) {
-                    tempTimer = setInterval(() => {
-                        tempSeconds++;
-                        updateHomeStopwatchDisplay();
-                    }, 1000);
-                    statusDot.style.backgroundColor = 'green';
-                    tempRunning = true;
+                    if (tempRunning) {
+                        clearInterval(tempTimer);
+                        statusDot.style.backgroundColor = 'red';
+                        sessionStorage.setItem('tempStopwatch', tempSeconds);
+                        tempRunning = false;
+                    }
+                } else {
+                    if (activeTab === 'task' && currentTaskIndex !== null && hasStarted && !userStopped) {
+                        timer = setInterval(() => {
+                            totalSeconds++;
+                            updateStopwatchDisplay();
+                        }, 1000);
+                        statusDot.style.backgroundColor = 'green';
+                        running = true;
+                    } else if (activeTab === 'home' && tempHasStarted && !tempUserStopped) {
+                        tempTimer = setInterval(() => {
+                            tempSeconds++;
+                            updateHomeStopwatchDisplay();
+                        }, 1000);
+                        statusDot.style.backgroundColor = 'green';
+                        tempRunning = true;
+                    }
                 }
             }
         });
@@ -527,5 +613,4 @@
         window.onload = initialize;
     </script>
 </body>
-
 </html>
